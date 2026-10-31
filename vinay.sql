@@ -41,6 +41,7 @@ round(avg(close),2) as avg_close from reliancee group by year(ï»¿date),qtr,qu
 select dayname(ï»¿date) as weekday,round(avg(volume),0)as avg_volume from 
 reliancee group by weekday(ï»¿date),dayname(ï»¿date) order by weekday(ï»¿date);
 
+
 -- find whch wekday has the highest avg closing price
 select dayname(ï»¿date)as weekday,round(avg(close),2) as avg_close from reliancee
 group by weekday(ï»¿date), dayname(ï»¿date)
@@ -54,7 +55,53 @@ min(low)as month_low,round(max(high)- min(low),2) as diff from reliancee group b
 select date_format(ï»¿date,'%y-%d')as yd ,max(high) as day_high,
 min(low)as day_low,round(max(high)- min(low),2) as diff from reliancee group by yd order by yd ;
 
+select date_format(ï»¿date,'%y-%m')as ym ,round(avg(volume),0) as avg_volume from reliancee
+group by ym having avg(volume)<(select avg(volume) from reliancee);
+
 -- calc column nd case
+
+-- count the no of gain , loss and flat using case with group by
+select day_type,count(*)as days 
+
+from(select case
+when close>prev_close then 'gain'
+when close<prev_close then 'loss' else 
+'flat'
+end as day_type from reliancee) as t group by day_type;
+
+-- showthe gap(open-rev_close) foreach day and flag gap greate than 1%
+select ï»¿date,prev_close,open,
+round(open-prev_close)  as gap,
+round((open-prev_close)/prev_close*100,2)as gap_percentage,
+case when (open-prev_close)/prev_close*100>1
+
+then 'gap up >2%' else '' end as flag from reliancee
+order by ï»¿date ;
+
+-- windw function
+
+-- add a row no to each day order by trade date 
+select row_number() over(order by  ï»¿date) as rn,
+ ï»¿date,close from reliancee;
+
+-- rank days by volume using dense_rank
+select  ï»¿date,volume,
+dense_rank() over (order by  volume desc) as volume_rank
+from reliancee;
+
+-- show each days close along side te nxt days close using 
+
+select  ï»¿date,close,
+lead(close) over(order by  ï»¿date) as next_day_close
+from reliancee ;
+
+
+select  ï»¿date,close,
+lag(close) over(order by  ï»¿date) as next_day_close
+from reliancee ;
+
+
+
 
 
 
