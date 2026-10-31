@@ -100,10 +100,18 @@ select  ï»¿date,close,
 lag(close) over(order by  ï»¿date) as next_day_close
 from reliancee ;
 
+-- calc moving avg of 5 day of closing price
+select  ï»¿date,close,round(avg(close)over( order by  ï»¿date rows between 4 preceding and
+current row),2) as moving_avg from reliancee;
 
+-- calc the running total of vume order by data
+select  ï»¿date,volume
+,sum(volume) over(order by   ï»¿date) as running_volume from reliancee;
 
-
-
+-- calc the draw down from the range max close for each days
+select  ï»¿date,close,max(close)over(order by   ï»¿date) as running_max,
+round((close-max(close) over(order by   ï»¿date))/max(close) over( order by   ï»¿date)/
+max(close) over(order by   ï»¿date)*100,2) as drawdown_pct from reliancee;
 
 
 
