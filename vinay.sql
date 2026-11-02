@@ -104,7 +104,7 @@ from reliancee ;
 select  ï»¿date,close,round(avg(close)over( order by  ï»¿date rows between 4 preceding and
 current row),2) as moving_avg from reliancee;
 
--- calc the running total of vume order by data
+-- calc the running total of volume order by data
 select  ï»¿date,volume
 ,sum(volume) over(order by   ï»¿date) as running_volume from reliancee;
 
@@ -112,6 +112,65 @@ select  ï»¿date,volume
 select  ï»¿date,close,max(close)over(order by   ï»¿date) as running_max,
 round((close-max(close) over(order by   ï»¿date))/max(close) over( order by   ï»¿date)/
 max(close) over(order by   ï»¿date)*100,2) as drawdown_pct from reliancee;
+
+-- find the max draw down over the period with dd as
+with dd as (select  ï»¿date,close,
+(close-max(close) over(order by  ï»¿date))/max(close)over(order by  ï»¿date)*100 as dd_pct from reliancee)
+select  ï»¿date,round(dd_pct,2)as max_dd_pct from dd order by dd_pct asc limit 1;
+
+-- days where the close was above the overall the avg close
+select   ï»¿date ,close from reliancee
+where close> (select avg(close) as avg_close from reliancee
+order by  ï»¿date );
+
+-- using a cte (common table expression),compute daily returns and find the avg daily return 
+
+with r as (select  ï»¿date,(close-prev_close)/prev_close*100 as 
+ret from reliancee)
+select round(avg(ret),4) as avg_daily_return_pct from r; 
+
+-- longest streak of consequetive base the stock closed higher than the previous close
+with flagged as (select  ï»¿date, 
+(close>prev_close) as up,
+row_number() over (order by  ï»¿date)as rn from reliancee ),
+grp as (select  ï»¿date,up,
+rn-row_number() over (partition by up order by  ï»¿date)as g from flagged)
+select min( ï»¿date) as streak_start,
+max( ï»¿date)as streak_end,
+count(*) as streak_days from grp
+where up=1 group by g order by streak_days desc;
+
+-- month with the best return
+with m as( select date_format( ï»¿date,'%y-%m')as ym ,close,
+row_number() over (partition by  date_format( ï»¿date,'%y-%m')
+order by  ï»¿date asc) as rn_asc,
+row_number() over(partition by date_format( ï»¿date,'%Y-%m')
+order by ï»¿date desc)as rn_desc from reliancee)
+
+select ym ,first_close,last_close,
+round((last_close-first_close)/first_close*100,2)as month_return_pct
+from(select ym,max(case when rn_asc= 1 then close end)as first_close,
+max(case when rn_desc=1 then close end)as last_close from m
+
+group by ym)as x
+order by month_return_pct desc limit 1;
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
